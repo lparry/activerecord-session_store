@@ -114,9 +114,9 @@ module ActionDispatch
         def get_session_model(request, id)
           model = get_session_with_fallback(id)
           if model
-            STDOUT.puts"found session: #{model.attributes}"
+            STDOUT.puts"found session for #{id}: #{model.attributes}"
           else
-            STDOUT.puts"found no session"
+            STDOUT.puts"found no session for #{id}"
             id = generate_sid
             model = session_class.new(:session_id => id.private_id, :data => {})
             model.save
