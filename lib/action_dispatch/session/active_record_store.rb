@@ -91,7 +91,7 @@ module ActionDispatch
           if sid = current_session_id(request)
             if model = get_session_with_fallback(sid)
               data = model.data
-              pp "deleting session: #{model.attributes}"
+              STDOUT.puts"deleting session: #{model.attributes}"
                 model.destroy
             end
           end
@@ -104,7 +104,7 @@ module ActionDispatch
             if options[:renew]
               new_model = session_class.new(:session_id => new_sid.private_id, :data => data)
               new_model.save
-              pp "renewing session: #{new_model.attributes}"
+              STDOUT.puts"renewing session: #{new_model.attributes}"
                 request.env[SESSION_RECORD_KEY] = new_model
             end
             new_sid
@@ -114,13 +114,13 @@ module ActionDispatch
         def get_session_model(request, id)
           model = get_session_with_fallback(id)
           if model
-            pp "found session: #{model.attributes}"
+            STDOUT.puts"found session: #{model.attributes}"
           else
-            pp "found no session"
+            STDOUT.puts"found no session"
             id = generate_sid
             model = session_class.new(:session_id => id.private_id, :data => {})
             model.save
-            pp "created session: #{model.attributes}"
+            STDOUT.puts"created session: #{model.attributes}"
           end
           if request.env[ENV_SESSION_OPTIONS_KEY][:id].nil?
             request.env[SESSION_RECORD_KEY] = model
@@ -133,10 +133,10 @@ module ActionDispatch
         def get_session_with_fallback(sid)
           if sid && !self.class.private_session_id?(sid.public_id)
             if (secure_session = session_class.find_by_session_id(sid.private_id))
-              pp "found secure session for sid #{sid.private_id}"
+              STDOUT.puts"found secure session for sid #{sid.private_id}"
               secure_session
             elsif (insecure_session = session_class.find_by_session_id(sid.public_id))
-              pp "found insecure session for sid #{sid.public_id}, upgrading to secure session id #{sid.private_id}"
+              STDOUT.puts"found insecure session for sid #{sid.public_id}, upgrading to secure session id #{sid.private_id}"
               insecure_session.session_id = sid.private_id # this causes the session to be secured
               insecure_session
             end
