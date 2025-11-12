@@ -60,9 +60,8 @@ module ActionDispatch
       SESSION_RECORD_KEY = 'rack.session.record'
       ENV_SESSION_OPTIONS_KEY = Rack::RACK_SESSION_OPTIONS
 
-    private
-      def get_session(request, sid)
-        logger.silence do
+      private
+        def get_session(request, sid)
           unless sid and session = get_session_with_fallback(sid)
             # If the sid was nil or if there is no pre-existing session under the sid,
             # force the generation of a new sid and associate a new session associated with the new sid
@@ -72,10 +71,8 @@ module ActionDispatch
           request.env[SESSION_RECORD_KEY] = session
           [sid, session.data]
         end
-      end
 
-      def write_session(request, sid, session_data, options)
-        logger.silence do
+        def write_session(request, sid, session_data, options)
           record, sid = get_session_model(request, sid)
           record.data = session_data
           return false unless record.save
@@ -89,14 +86,13 @@ module ActionDispatch
 
           sid
         end
-      end
 
-      def delete_session(request, session_id, options)
-        logger.silence do
+        def delete_session(request, session_id, options)
           if sid = current_session_id(request)
             if model = get_session_with_fallback(sid)
               data = model.data
-              model.destroy
+              pp "deleting session: #{model}"
+                model.destroy
             end
           end
 
@@ -108,20 +104,23 @@ module ActionDispatch
             if options[:renew]
               new_model = session_class.new(:session_id => new_sid.private_id, :data => data)
               new_model.save
-              request.env[SESSION_RECORD_KEY] = new_model
+              pp "renewing session: #{new_model}"
+                request.env[SESSION_RECORD_KEY] = new_model
             end
             new_sid
           end
         end
-      end
 
-      def get_session_model(request, id)
-        logger.silence do
+        def get_session_model(request, id)
           model = get_session_with_fallback(id)
-          unless model
+          if model
+            pp "found session: #{model}"
+          else
+            pp "found no session"
             id = generate_sid
             model = session_class.new(:session_id => id.private_id, :data => {})
             model.save
+            pp "created session: #{model}"
           end
           if request.env[ENV_SESSION_OPTIONS_KEY][:id].nil?
             request.env[SESSION_RECORD_KEY] = model
@@ -130,39 +129,40 @@ module ActionDispatch
           end
           [model, id]
         end
-      end
 
-      def get_session_with_fallback(sid)
-        if sid && !self.class.private_session_id?(sid.public_id)
-          if (secure_session = session_class.find_by_session_id(sid.private_id))
-            secure_session
-          elsif (insecure_session = session_class.find_by_session_id(sid.public_id))
-            insecure_session.session_id = sid.private_id # this causes the session to be secured
-            insecure_session
+        def get_session_with_fallback(sid)
+          if sid && !self.class.private_session_id?(sid.public_id)
+            if (secure_session = session_class.find_by_session_id(sid.private_id))
+              pp "found secure session for sid #{sid.private_id}"
+              secure_session
+            elsif (insecure_session = session_class.find_by_session_id(sid.public_id))
+              pp "found insecure session for sid #{sid.public_id}, upgrading to secure session id #{sid.private_id}"
+              insecure_session.session_id = sid.private_id # this causes the session to be secured
+              insecure_session
+            end
           end
         end
-      end
 
-      def find_session(request, id)
-        model, id = get_session_model(request, id)
-        [id, model.data]
-      end
-
-      module NilLogger
-        def self.silence
-          yield
+        def find_session(request, id)
+          model, id = get_session_model(request, id)
+          [id, model.data]
         end
-      end
 
-      def logger
-        ActiveRecord::Base.logger || NilLogger
-      end
+        module NilLogger
+          def self.silence
+            yield
+          end
+        end
 
-      def self.private_session_id?(session_id)
-        # user tried to retrieve a session by a private key?
-        session_id =~ /\A\d+::/
-      end
+        def logger
+          ActiveRecord::Base.logger || NilLogger
+        end
+
+        def self.private_session_id?(session_id)
+          # user tried to retrieve a session by a private key?
+          session_id =~ /\A\d+::/
+        end
 
     end
-  end
+end
 end
