@@ -91,7 +91,7 @@ module ActionDispatch
           if sid = current_session_id(request)
             if model = get_session_with_fallback(sid)
               data = model.data
-              pp "deleting session: #{model}"
+              pp "deleting session: #{model.attributes}"
                 model.destroy
             end
           end
@@ -104,7 +104,7 @@ module ActionDispatch
             if options[:renew]
               new_model = session_class.new(:session_id => new_sid.private_id, :data => data)
               new_model.save
-              pp "renewing session: #{new_model}"
+              pp "renewing session: #{new_model.attributes}"
                 request.env[SESSION_RECORD_KEY] = new_model
             end
             new_sid
@@ -114,13 +114,13 @@ module ActionDispatch
         def get_session_model(request, id)
           model = get_session_with_fallback(id)
           if model
-            pp "found session: #{model}"
+            pp "found session: #{model.attributes}"
           else
             pp "found no session"
             id = generate_sid
             model = session_class.new(:session_id => id.private_id, :data => {})
             model.save
-            pp "created session: #{model}"
+            pp "created session: #{model.attributes}"
           end
           if request.env[ENV_SESSION_OPTIONS_KEY][:id].nil?
             request.env[SESSION_RECORD_KEY] = model
