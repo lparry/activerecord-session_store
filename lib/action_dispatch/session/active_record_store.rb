@@ -140,6 +140,8 @@ module ActionDispatch
               insecure_session.session_id = sid.private_id # this causes the session to be secured
               insecure_session
             end
+          else
+            STDOUT.puts "Did nothing - sid: #{sid}, sid && self.class.private_session_id?(sid.public_id): #{sid && self.class.private_session_id?(sid.public_id)} "
           end
         end
 
